@@ -25,6 +25,7 @@ vector<double> x3;
 
 double W_ref;
 
+double amplitude;
 
 double    firlp0f1[]={9.3022e-05, 1.4470e-03, 4.8311e-03, 1.1993e-02, 2.4043e-02, 4.0934e-02,
    6.1231e-02,   8.2284e-02,   1.0076e-01,   1.1342e-01,   1.1793e-01,   1.1342e-01,
@@ -90,6 +91,7 @@ void vector_op()                //2.3 Vector Operation
 {
 
     double betrag_x1     = sqrt( x1[0]*x1[0] + x1[1]*x1[1] );
+    amplitude=betrag_x1;
     double betrag_x2     = sqrt( x2[0]*x2[0] + x2[1]*x2[1] );
 
     double skalarprodukt =  x1[0] * x2[0]  +  x1[1] * x2[1];
@@ -155,7 +157,7 @@ double Fmeas_uniavg (double s_0, double fsample)   // 2.2 Frequency Measurement
   
   double f = (fsample/(TWOPI * K)) *acos(LS2/(2*LS1));
 
-  fprintf(fp,"%10f %10.8f %10.8f %10.8f %10f %10f %10f %10f %10f\n",f, (LS2/(2*LS1)), LS1, LS2, sample[0],sample[1],sample[2],sample[3],sample[4]);
+  //fprintf(fp,"%10f %10.8f %10.8f %10.8f %10f %10f %10f %10f %10f %10f\n",f, (LS2/(2*LS1)), LS1, LS2, sample[0],sample[1],sample[2],sample[3],sample[4],amplitude);
   
   for(i=(NUM_OF_MEM-1);i>0;i--){
     sample[i]=sample[i-1];
@@ -209,13 +211,14 @@ void analysePhasor()
 
 	//compare with averaging appraoch
 	
-
+    double amp=(rand()%26000)*0.01;
+    
 	printf("Sample  Measurement    Phase  Freq\n");
 	
     for (int n = 0; n <= 2000; n++)
     {
         // Signal
-        double x = sin(  n * W )+ 100*(rand()%1000)*0.000000001;
+        double x = amp*(sin(  n * W )+ 1000*(rand()%1000)*0.000000001);
         double xf =fir.filter(x);
         double xref = sin(  n * W_ref);
         
@@ -224,7 +227,7 @@ void analysePhasor()
        // Filter
     
         // Pseudo IQ
-        IQ_gen(xf);
+        IQ_gen(x);
 
         // Referenz
         REF_IQ_gen(xref);
@@ -236,13 +239,7 @@ void analysePhasor()
 
 		double f_unifilter=Fmeas_uniavg(x,fsample);
         // Print Result(s)
-        printf("%5i %10f   %10f  %10f   %10f vs%10f\n",n, x,xf, w_deg,f_unifilter,f);
-
-        //gnuplot -p -e "plot 'sniff.txt' with lines";
-       
-        //fprintf(fp,"%f %f\n",x1[0],x1[1]);    // IQ
-        //fprintf(fp,"%f\n",w_deg);             // phi
-        //fprintf(fp,"%f\n",xx);                // Filter output
+        printf("%5i %10f   %10f  %10f   %10f vs%10f A:%f\n",n, x,xf, w_deg,f_unifilter,f,amplitude);
 
     }
     fclose(fp);
