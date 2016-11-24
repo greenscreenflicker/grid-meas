@@ -1,7 +1,7 @@
 CC=cpp
 CFLAGS=-lm -I.
 DEPS = 
-OBJ = main.o  fir1.o
+OBJ = main.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
