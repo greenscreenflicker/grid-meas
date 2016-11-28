@@ -176,10 +176,10 @@ float Fmeas_ringbuffer(float s_0, float fsample){
 	int i;
 	
 	for(i=0;i<NUM_OF_AVG;i++){
-		LS1=LS1+(grid_sample[fm(-0+ringbuf_position-i)]*grid_sample[fm(-3+ringbuf_position-i)]-grid_sample[fm(-1+ringbuf_position-i)]*grid_sample[fm(-2+ringbuf_position-i)]);
-		LS2=LS2+(grid_sample[fm(-0+ringbuf_position-i)]*grid_sample[fm(-5+ringbuf_position-i)]-grid_sample[fm(-1+ringbuf_position-i)]*grid_sample[fm(-4+ringbuf_position-i)]);
-		printf("LS1:%3i*%3i+%3i*%3i\n",fm(ringbuf_position-i),fm(ringbuf_position-3-i),fm(ringbuf_position-1-i),fm(ringbuf_position-2-i));
-		printf("LS2:%3i*%3i+%3i*%3i\n",fm(ringbuf_position-i),fm(ringbuf_position-5-i),fm(ringbuf_position-1-i),fm(ringbuf_position-4-i));
+		LS1=LS1+(grid_sample[fm(-(5-0)+ringbuf_position-i)]*grid_sample[fm(-(5-3)+ringbuf_position-i)]-grid_sample[fm(-(5-1)+ringbuf_position-i)]*grid_sample[fm(-(5-2)+ringbuf_position-i)]);
+		LS2=LS2+(grid_sample[fm(-(5-0)+ringbuf_position-i)]*grid_sample[fm(-(5-5)+ringbuf_position-i)]-grid_sample[fm(-(5-1)+ringbuf_position-i)]*grid_sample[fm(-(5-4)+ringbuf_position-i)]);
+		//printf("LS1:%3i*%3i+%3i*%3i\n",fm(ringbuf_position-i-5),fm(ringbuf_position-3-i-5),fm(ringbuf_position-1-i-5),fm(ringbuf_position-2-i-5));
+		//printf("LS2:%3i*%3i+%3i*%3i\n",fm(ringbuf_position-i-5),fm(ringbuf_position-5-i-5),fm(ringbuf_position-1-i-5),fm(ringbuf_position-4-i-5));
 	}
 	f = (fsample/(TWOPI * K)) *acos(LS2/(2*LS1));
 	//fprintf(fp,"%10f %10.8f %10.8f %10.8f %10f %10f %10f %10f %10f %10f\n",f, (LS2/(2*LS1)), LS1, LS2, sample[0],sample[1],sample[2],sample[3],sample[4],amplitude);
