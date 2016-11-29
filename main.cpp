@@ -115,6 +115,8 @@ double Fmeas (double s_0, double fsample)   // 2.2 Frequency Measurement
 #define NUM_OF_AVG 20
 #define NUM_OF_MEM (5+NUM_OF_AVG)
 
+
+
 double sample[NUM_OF_MEM];
 float Fmeas_uniavg (float s_0, float fsample)   // 2.2 Frequency Measurement
 {
@@ -158,6 +160,8 @@ int fm(int v){
 	return v;
 }
 
+#define FM(v) ((v<0)? (v+NUM_OF_MEM): (v))
+
 int ringbuf_position=0;
 float grid_sample[NUM_OF_MEM];
 float Fmeas_ringbuffer(float s_0, float fsample){
@@ -174,12 +178,28 @@ float Fmeas_ringbuffer(float s_0, float fsample){
 	float LS2=0;
 	double f;
 	int i;
-	
-	for(i=0;i<NUM_OF_AVG;i++){
-		LS1=LS1+(grid_sample[fm(-(5-0)+ringbuf_position-i)]*grid_sample[fm(-(5-3)+ringbuf_position-i)]-grid_sample[fm(-(5-1)+ringbuf_position-i)]*grid_sample[fm(-(5-2)+ringbuf_position-i)]);
-		LS2=LS2+(grid_sample[fm(-(5-0)+ringbuf_position-i)]*grid_sample[fm(-(5-5)+ringbuf_position-i)]-grid_sample[fm(-(5-1)+ringbuf_position-i)]*grid_sample[fm(-(5-4)+ringbuf_position-i)]);
-		//printf("LS1:%3i*%3i+%3i*%3i\n",fm(ringbuf_position-i-5),fm(ringbuf_position-3-i-5),fm(ringbuf_position-1-i-5),fm(ringbuf_position-2-i-5));
-		//printf("LS2:%3i*%3i+%3i*%3i\n",fm(ringbuf_position-i-5),fm(ringbuf_position-5-i-5),fm(ringbuf_position-1-i-5),fm(ringbuf_position-4-i-5));
+	int lowerend=-NUM_OF_AVG+ringbuf_position;
+	for(i=ringbuf_position;i>(5);i--){
+		LS1=LS1+(grid_sample[(-(5-0)+i)]*grid_sample[(-(5-3)+i)]-grid_sample[(-(5-1)+i)]*grid_sample[(-(5-2)+i)]);
+		LS2=LS2+(grid_sample[(-(5-0)+i)]*grid_sample[(-(5-5)+i)]-grid_sample[(-(5-1)+i)]*grid_sample[(-(5-4)+i)]);
+		printf("   LS1:%3i*%3i+%3i*%3i\n",(i-5),(i-(5-3)),(+i-(5-1)),(-(5-2)+i));
+		printf("   LS2:%3i*%3i+%3i*%3i\n",(i-5),(i-(5-5)),(-(5-1)+i),(-(5-4)+i));
+	}
+	int fixcorner=lowerend;
+	if(fixcorner<-1) fixcorner=-1;
+	for(i;i>(fixcorner);i--){
+		LS1=LS1+(grid_sample[FM(-(5-0)+i)]*grid_sample[FM(-(5-3)+i)]-grid_sample[FM(-(5-1)+i)]*grid_sample[FM(-(5-2)+i)]);
+		LS2=LS2+(grid_sample[FM(-(5-0)+i)]*grid_sample[FM(-(5-5)+i)]-grid_sample[FM(-(5-1)+i)]*grid_sample[FM(-(5-4)+i)]);
+		printf("fc:LS1:%3i*%3i+%3i*%3i\n",FM(i-5),FM(i-(5-3)),FM(+i-(5-1)),FM(-(5-2)+i));
+		printf("fc:LS2:%3i*%3i+%3i*%3i\n",FM(i-5),FM(i-(5-5)),FM(-(5-1)+i),FM(-(5-4)+i));
+	}
+	for(i;i>(lowerend);i--){
+		LS1=LS1+(grid_sample[(NUM_OF_MEM-(5-0)+i)]*grid_sample[(NUM_OF_MEM-(5-3)+i)]-grid_sample[(NUM_OF_MEM-(5-1)+i)]*grid_sample[(NUM_OF_MEM-(5-2)+i)]);
+		LS2=LS2+(grid_sample[(NUM_OF_MEM-(5-0)+i)]*grid_sample[(NUM_OF_MEM-(5-5)+i)]-grid_sample[(NUM_OF_MEM-(5-1)+i)]*grid_sample[(NUM_OF_MEM-(5-4)+i)]);
+		//printf("c1:LS1:%3i*%3i+%3i*%3i\n",fm(i-5),fm(i-(5-3)),fm(+i-(5-1)),fm(-(5-2)+i));
+		printf("   LS1:%3i*%3i+%3i*%3i\n",NUM_OF_MEM+(i-5),NUM_OF_MEM+(i-(5-3)),NUM_OF_MEM+(+i-(5-1)),NUM_OF_MEM+(-(5-2)+i));
+		//printf("c2:LS2:%3i*%3i+%3i*%3i\n",fm(i-5),fm(i-(5-5)),fm(-(5-1)+i),fm(-(5-4)+i));
+		printf("   LS2:%3i*%3i+%3i*%3i\n",NUM_OF_MEM+(i-5),NUM_OF_MEM+(i-(5-5)),NUM_OF_MEM+(-(5-1)+i),NUM_OF_MEM+(-(5-4)+i));	
 	}
 	f = (fsample/(TWOPI * K)) *acos(LS2/(2*LS1));
 	//fprintf(fp,"%10f %10.8f %10.8f %10.8f %10f %10f %10f %10f %10f %10f\n",f, (LS2/(2*LS1)), LS1, LS2, sample[0],sample[1],sample[2],sample[3],sample[4],amplitude);

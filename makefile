@@ -1,5 +1,5 @@
 CC=cpp
-CFLAGS=-lm -I.
+CFLAGS=-lm -O3 -I.
 DEPS = 
 OBJ = main.o
 
