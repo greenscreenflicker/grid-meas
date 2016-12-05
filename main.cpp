@@ -165,12 +165,13 @@ int fm(int v){
 int ringbuf_position=0;
 float grid_sample[NUM_OF_MEM];
 float Fmeas_ringbuffer(float s_0, float fsample){
+	ringbuf_position=ringbuf_position+1;
 	if(ringbuf_position>(NUM_OF_MEM-1)){
 		ringbuf_position=0;
 	}
-	printf("f:%i\n",ringbuf_position);
+	//printf("f:%i\n",ringbuf_position);
 	grid_sample[ringbuf_position]=s_0;
-
+	//printf("Bufferwrite:%f\n",grid_sample[ringbuf_position]);
 
 	double K = 2.0;
 
@@ -182,36 +183,134 @@ float Fmeas_ringbuffer(float s_0, float fsample){
 	for(i=ringbuf_position;i>(5);i--){
 		LS1=LS1+(grid_sample[(-(5-0)+i)]*grid_sample[(-(5-3)+i)]-grid_sample[(-(5-1)+i)]*grid_sample[(-(5-2)+i)]);
 		LS2=LS2+(grid_sample[(-(5-0)+i)]*grid_sample[(-(5-5)+i)]-grid_sample[(-(5-1)+i)]*grid_sample[(-(5-4)+i)]);
-		printf("   LS1:%3i*%3i+%3i*%3i\n",(i-5),(i-(5-3)),(+i-(5-1)),(-(5-2)+i));
-		printf("   LS2:%3i*%3i+%3i*%3i\n",(i-5),(i-(5-5)),(-(5-1)+i),(-(5-4)+i));
+		//printf("   LS1:%3i*%3i+%3i*%3i\n",(i-5),(i-(5-3)),(+i-(5-1)),(-(5-2)+i));
+		//printf("   LS2:%3i*%3i+%3i*%3i\n",(i-5),(i-(5-5)),(-(5-1)+i),(-(5-4)+i));
 	}
 	int fixcorner=lowerend;
 	if(fixcorner<-1) fixcorner=-1;
 	for(i;i>(fixcorner);i--){
 		LS1=LS1+(grid_sample[FM(-(5-0)+i)]*grid_sample[FM(-(5-3)+i)]-grid_sample[FM(-(5-1)+i)]*grid_sample[FM(-(5-2)+i)]);
 		LS2=LS2+(grid_sample[FM(-(5-0)+i)]*grid_sample[FM(-(5-5)+i)]-grid_sample[FM(-(5-1)+i)]*grid_sample[FM(-(5-4)+i)]);
-		printf("fc:LS1:%3i*%3i+%3i*%3i\n",FM(i-5),FM(i-(5-3)),FM(+i-(5-1)),FM(-(5-2)+i));
-		printf("fc:LS2:%3i*%3i+%3i*%3i\n",FM(i-5),FM(i-(5-5)),FM(-(5-1)+i),FM(-(5-4)+i));
+//printf("fc:LS1:%3i*%3i+%3i*%3i\n",FM(i-5),FM(i-(5-3)),FM(+i-(5-1)),FM(-(5-2)+i));
+		//printf("fc:LS2:%3i*%3i+%3i*%3i\n",FM(i-5),FM(i-(5-5)),FM(-(5-1)+i),FM(-(5-4)+i));
 	}
 	for(i;i>(lowerend);i--){
 		LS1=LS1+(grid_sample[(NUM_OF_MEM-(5-0)+i)]*grid_sample[(NUM_OF_MEM-(5-3)+i)]-grid_sample[(NUM_OF_MEM-(5-1)+i)]*grid_sample[(NUM_OF_MEM-(5-2)+i)]);
 		LS2=LS2+(grid_sample[(NUM_OF_MEM-(5-0)+i)]*grid_sample[(NUM_OF_MEM-(5-5)+i)]-grid_sample[(NUM_OF_MEM-(5-1)+i)]*grid_sample[(NUM_OF_MEM-(5-4)+i)]);
 		//printf("c1:LS1:%3i*%3i+%3i*%3i\n",fm(i-5),fm(i-(5-3)),fm(+i-(5-1)),fm(-(5-2)+i));
-		printf("   LS1:%3i*%3i+%3i*%3i\n",NUM_OF_MEM+(i-5),NUM_OF_MEM+(i-(5-3)),NUM_OF_MEM+(+i-(5-1)),NUM_OF_MEM+(-(5-2)+i));
+		//printf("   LS1:%3i*%3i+%3i*%3i\n",NUM_OF_MEM+(i-5),NUM_OF_MEM+(i-(5-3)),NUM_OF_MEM+(+i-(5-1)),NUM_OF_MEM+(-(5-2)+i));
 		//printf("c2:LS2:%3i*%3i+%3i*%3i\n",fm(i-5),fm(i-(5-5)),fm(-(5-1)+i),fm(-(5-4)+i));
-		printf("   LS2:%3i*%3i+%3i*%3i\n",NUM_OF_MEM+(i-5),NUM_OF_MEM+(i-(5-5)),NUM_OF_MEM+(-(5-1)+i),NUM_OF_MEM+(-(5-4)+i));	
+		//printf("   LS2:%3i*%3i+%3i*%3i\n",NUM_OF_MEM+(i-5),NUM_OF_MEM+(i-(5-5)),NUM_OF_MEM+(-(5-1)+i),NUM_OF_MEM+(-(5-4)+i));	
 	}
 	f = (fsample/(TWOPI * K)) *acos(LS2/(2*LS1));
 	//fprintf(fp,"%10f %10.8f %10.8f %10.8f %10f %10f %10f %10f %10f %10f\n",f, (LS2/(2*LS1)), LS1, LS2, sample[0],sample[1],sample[2],sample[3],sample[4],amplitude);
 
 
-	ringbuf_position=ringbuf_position+1;
-
 	return f;
   
 }
 
+float grid_rb_i;
+float grid_rb_q;
 
+void IQ_ringbuffer(float f,float fsample){
+	float W = (TWOPI / fsample) * f; // Î©
+	
+	float rho = W - PI/2.0;
+
+	a0 = tan(rho);
+	a1 = 1.0 / cos(rho);
+
+	float avg=NUM_OF_MEM-1;
+	float I,Isq=0;
+	float Q,Qsq=0;
+	int lowerend=-NUM_OF_MEM+1+ringbuf_position;
+	int i;
+	float v0,v1;
+	for(i=ringbuf_position;i>1;i--){
+		v0=grid_sample[(i)];
+		v1=grid_sample[(i-1)];
+		I = v0;
+		Isq = Isq + I*I;
+		Q = a0 * (v0) + a1 * v1;
+		Qsq = Qsq+Q*Q;
+		//printf("fir:%3i(%f)*%3i(%f)\n",(i),v0,(i-1),v1);
+	}
+	int fixcorner=lowerend;
+	if(fixcorner<-1) fixcorner=-1;
+	for(i;i>(fixcorner);i--){
+		v0=grid_sample[FM(i)];
+		v1=grid_sample[FM(i-1)];
+		I = v0;
+		Isq = Isq + I*I;
+		Q = a0 * (v0) + a1 * v1;
+		Qsq = Qsq+Q*Q;
+		//printf("fix:%3i(%f)*%3i(%f)\n",FM(i),v0,FM(i-1),v1);	
+		//printf("I:%f|Q:%f\n",I,Q);
+	}
+	for(i;i>(lowerend);i--){
+		v0=grid_sample[FM(i)];
+		v1=grid_sample[FM(i-1)];
+		I = v0;
+		Isq = Isq + I*I;
+		Q = a0 * (v0) + a1 * v1;
+		Qsq = Qsq+Q*Q;
+		//printf("sec:%3i(%f)*%3i(%f)\n",(i+NUM_OF_MEM),v0,(i-1+NUM_OF_MEM),v1);
+	}
+	grid_rb_i=Isq/avg;
+	grid_rb_q=Qsq/avg;
+}
+
+float IQ_ringbuffer_getamplitude(void){
+	float amplitude;
+	amplitude=sqrt(grid_rb_i+grid_rb_q);
+	return amplitude;
+}
+
+float IQ_get_phasor_oldphase;
+
+float IQ_ringbuffer_getphasor(float f,float fsample){
+	//x1: Signal x2:Reference
+	//0=Q - 1=I
+	//skalarprodukt =  x1[0] * x2[0]  +  x1[1] * x2[1];
+	//I=AMP*cos(phi)
+	//Q=AMP*sin(phi)
+	//We fix phase at zero, thus I=1,Q=0
+	float skalarprodukt=grid_sample[ringbuf_position];
+	float normed= skalarprodukt /(IQ_ringbuffer_getamplitude());
+	float phase_rad = acosf (normed);
+	float v0,v1;
+
+	v0=grid_sample[FM(ringbuf_position-0)];
+	v1=grid_sample[FM(ringbuf_position-1)];
+	int oldbiggerthennew=(v0<v1)?1:-1;
+	printf("ObN:%i - normed: %f\n",oldbiggerthennew, normed);
+	
+
+	if(oldbiggerthennew<0){
+		phase_rad=-phase_rad+2*M_PI;
+	}
+
+	if(fabs(normed)>(1-f/(2*fsample))) {
+		float fix=IQ_get_phasor_oldphase;
+		float estimatedphase=IQ_get_phasor_oldphase+(f/fsample)*2*PI;
+		if(estimatedphase>TWOPI)estimatedphase=estimatedphase-TWOPI;
+		printf("Measurement might be invalid. Phase estimated: %f\n",180*(estimatedphase/PI));
+		if(fabs(estimatedphase-phase_rad)>(f/(4*fsample))*TWOPI){
+			printf("use estimated value.\n");
+			phase_rad=estimatedphase;
+		}
+	}
+	if(fabs(normed)>1){
+		float fix=IQ_get_phasor_oldphase;
+		float estimatedphase=IQ_get_phasor_oldphase+(f/fsample)*2*PI;
+		phase_rad=estimatedphase;
+		printf("over unity fix");
+	}
+	
+	IQ_get_phasor_oldphase=phase_rad;
+	return phase_rad;
+}
 
 
 
@@ -233,7 +332,7 @@ void analysePhasor()
 
     fp = fopen( "sniff.txt", "w+");
 
-    double fsample = 1000.0;
+    double fsample = 1000.00;
     double fsignal = 50.515;
     double fnominal = 50.515;
     double fcut = 50.0;
@@ -250,18 +349,21 @@ void analysePhasor()
 
 	//compare with averaging appraoch
 	
-    double amp=(rand()%26000)*0.01;
-    
+    double amp=200;
+    printf("Amplitude: %lf\n",amp);
 	printf("Sample  Measurement    Phase  Freq\n");
 	
+	float iq_amp;
     for (int n = 0; n <= 2000; n++)
     {
         // Signal
-        double x = amp*(sin(  n * W ));//+ 1000*(rand()%1000)*0.000000001);
+        double x = amp*(cos(  n * W )+ 1000*(rand()%1000)*0.000000001);
         double xref = sin(  n * W_ref);
         
 		f = Fmeas_ringbuffer(x,fsample);
 		
+		IQ_ringbuffer(f,fsample);
+		iq_amp=IQ_ringbuffer_getamplitude();
        // Filter
     
         // Pseudo IQ
@@ -272,13 +374,18 @@ void analysePhasor()
 
         // Vector Operation
         vector_op();
-        double w_rad = acos(x3[0]);
-        double w_deg = w_rad / PI * 180.0;
+        float w_rad = IQ_ringbuffer_getphasor(f,fsample);
+        float w_deg = w_rad / PI * 180.0;
 
 		double f_unifilter=Fmeas_uniavg(x,fsample);
         // Print Result(s)
-        printf("%5i %10.2f   %10f   o:%-10f r:%-10f A:%f\n",n%NUM_OF_MEM, x, w_deg,f_unifilter,f,amplitude);
-
+        
+        
+        float truephase=((n*W) / PI) * 180.0;
+        while(truephase>360) {truephase=truephase-360;}
+        if(n>NUM_OF_MEM){
+			printf("%5i v:%10.2lf r:%-10f A:%f ph:%f tph:%f°\n",n%NUM_OF_MEM,x, f,iq_amp,w_deg,truephase);
+		}
     }
     fclose(fp);
 }
