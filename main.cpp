@@ -276,22 +276,43 @@ float IQ_ringbuffer_getphasor(float f,float fsample){
 	//I=AMP*cos(phi)
 	//Q=AMP*sin(phi)
 	//We fix phase at zero, thus I=1,Q=0
-	float skalarprodukt=grid_sample[ringbuf_position];
-	float normed= skalarprodukt /(IQ_ringbuffer_getamplitude());
-	float phase_rad = acosf (normed);
-	float v0,v1;
-
-	v0=grid_sample[FM(ringbuf_position-0)];
-	v1=grid_sample[FM(ringbuf_position-1)];
-	int oldbiggerthennew=(v0<v1)?1:-1;
-	printf("ObN:%i - normed: %f\n",oldbiggerthennew, normed);
+	//float skalarprodukt=grid_sample[ringbuf_position];
+	//float normed= skalarprodukt /(IQ_ringbuffer_getamplitude());
+	//float phase_rad = acosf (normed);
+	float v0,v1,w;
+	float skalarprodukt, normed, phase_rad;
+	float phasefixed;
+	float phasesum=0;
+	
+	w=2*PI*f/fsample;
+	int i;
+	int oldbiggerthennew;
+	int elements=0;
+	
+	v0=grid_sample[FM(ringbuf_position)];
+	for(i=0;i<NUM_OF_AVG;i++){
+		v1=grid_sample[FM(ringbuf_position-1-i)];
+		skalarprodukt=v0;
+		normed= skalarprodukt /(IQ_ringbuffer_getamplitude());
+		if(fabs(normed)>0.9) {v0=v1; continue;}
+		elements++;
+		phase_rad = acosf (normed);
+		oldbiggerthennew=(v0<v1)?1:-1;
+		if(oldbiggerthennew<0){phase_rad=-phase_rad+2*M_PI;}
+		phasefixed=phase_rad+w*i;
+		while (phasefixed>2*PI) {phasefixed=phasefixed-2*PI;};
+		//printf("ObN:%i - normed: %f - phase %f  phs %f -i %i e %i\n",oldbiggerthennew, normed, phase_rad, phasefixed, i, elements);
+		//printf("v0 %f v1 %f \n",v0,v1);
+		phasesum+=phasefixed;
+		v0=v1;
+	}
 	
 
-	if(oldbiggerthennew<0){
-		phase_rad=-phase_rad+2*M_PI;
-	}
 
-	if(fabs(normed)>(1-f/(2*fsample))) {
+	return phasesum/elements;
+}
+/*
+ * 	if(fabs(normed)>(1-f/(2*fsample))) {
 		float fix=IQ_get_phasor_oldphase;
 		float estimatedphase=IQ_get_phasor_oldphase+(f/fsample)*2*PI;
 		if(estimatedphase>TWOPI)estimatedphase=estimatedphase-TWOPI;
@@ -308,10 +329,7 @@ float IQ_ringbuffer_getphasor(float f,float fsample){
 		printf("over unity fix");
 	}
 	
-	IQ_get_phasor_oldphase=phase_rad;
-	return phase_rad;
-}
-
+	IQ_get_phasor_oldphase=phase_rad;*/
 
 
 /***********************************************************************************************************************************\
